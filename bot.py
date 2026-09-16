@@ -1298,6 +1298,10 @@ def should_answer(update, text, direct, photo=False):
     if is_task_request(text) or is_task_submission(text) or is_translation_request(text) or photo:
         return True
 
+    # 6.1 ANIQ AKADEMIK / DASTURLASH SAVOLLARI ("algoritm nima?", "python nima?", "funksiya qanday ishlaydi?"):
+    if is_academic_question(text) and ("?" in text or is_question_like(text)):
+        return True
+
     # 7. AGAR USTOZ (ADMIN) ONLAYN / FAOL BO'LSA:
     # "onlayn bo'ldimi javob bermasin"
     # Ustoz o'zi o'quvchilarga javob berishi uchun bot jim turadi.
@@ -2557,14 +2561,11 @@ async def handle_admin_natural_query(update: Update, context: ContextTypes.DEFAU
     if is_talking_to_student:
         return False
 
-    # Guruhda admin bot bilan AI suhbat qilishi uchun botga to'g'ridan-to'g'ri murojaat qilishi shart (direct_request: @bot, "Pi", botga reply)
-    # Shaxsiy chatda esa to'g'ridan-to'g'ri suhbat qilishi mumkin.
-    if is_group:
-        is_direct_to_bot = direct_request(message, chat, context.bot, text)
-    else:
-        is_direct_to_bot = True
+    # Guruhda yoki shaxsiy chatda admin savol berganda ("algoritm nima?", "?" belgisi, ta'limiy/texnik savol yoki botga murojaat):
+    is_direct_to_bot = direct_request(message, chat, context.bot, text) if is_group else True
+    is_question = bool(is_question_like(text) or is_academic_question(text) or ("?" in text) or is_task_request(text))
 
-    if is_direct_to_bot and (is_question_like(text) or len(text.split()) >= 2 or "?" in text):
+    if is_direct_to_bot or is_question:
         admin_prompt = (
             f"Siz 'Cyber Tech Academy' zamonaviy IT markazining 'Pi' nomli aqlli AI yordamchisisiz.\n"
             f"Sizga akademiyaning Bosh Ustozi va Rahbari (Shaxboz Salomov) murojaat qilmoqda: '{text}'\n\n"
