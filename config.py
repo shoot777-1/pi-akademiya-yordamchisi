@@ -18,8 +18,8 @@ DB_PATH = BASE_DIR / "pi_academy.db"
 EXCEL_PATH = BASE_DIR / "oquvchilar.xlsx"
 
 # Tokenlar
-BOT_TOKEN = os.getenv("PI_BOT_TOKEN") or os.getenv("BOT_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or _local_secrets.get("BOT_TOKEN", "")
-OPENAI_API_KEY = os.getenv("PI_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or _local_secrets.get("OPENAI_API_KEY", "")
+BOT_TOKEN = _local_secrets.get("BOT_TOKEN") or os.getenv("PI_BOT_TOKEN") or os.getenv("BOT_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN") or ""
+OPENAI_API_KEY = _local_secrets.get("OPENAI_API_KEY") or os.getenv("PI_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or ""
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "658069248"))
 

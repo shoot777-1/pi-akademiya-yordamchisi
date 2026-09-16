@@ -696,10 +696,37 @@ async def handle_api_data(request):
     return web.json_response(data)
 
 
+async def handle_health_check(request):
+    from config import OPENAI_API_KEY, OPENAI_MODEL, BOT_TOKEN
+    import ai_service
+    ai_status = "untested"
+    try:
+        test_res = await ai_service.client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=5
+        )
+        ai_status = f"ok ({test_res.choices[0].message.content.strip()})"
+    except Exception as e:
+        ai_status = f"error: {type(e).__name__} - {e}"
+
+    return web.json_response({
+        "status": "online",
+        "bot_token_set": bool(BOT_TOKEN),
+        "openai_key_prefix": (OPENAI_API_KEY[:8] + "...") if OPENAI_API_KEY else None,
+        "openai_key_suffix": ("..." + OPENAI_API_KEY[-6:]) if OPENAI_API_KEY else None,
+        "openai_key_len": len(OPENAI_API_KEY) if OPENAI_API_KEY else 0,
+        "openai_model": OPENAI_MODEL,
+        "last_ai_error": ai_service.last_ai_error,
+        "ai_test": ai_status
+    })
+
+
 async def create_web_app():
     app = web.Application()
     app.router.add_get("/", handle_index)
     app.router.add_get("/api/dashboard_data", handle_api_data)
+    app.router.add_get("/api/health_check", handle_health_check)
     return app
 
 
