@@ -3037,9 +3037,12 @@ async def post_init(application):
     await configure_command_menus(application.bot)
     backup_data()
     set_setting("last_backup_date", tashkent_now().date().isoformat())
-    application.bot_data["reminder_task"] = asyncio.create_task(reminder_background_task(application))
-    # application.bot_data["web_runner"] = await start_web_dashboard(port=8088)  # Hozircha localhost olib tashlandi
-    application.bot_data["pinned_leaderboard_task"] = asyncio.create_task(update_pinned_leaderboard(application.bot))
+    port_env = os.getenv("PORT")
+    if port_env:
+        try:
+            application.bot_data["web_runner"] = await start_web_dashboard(host="0.0.0.0", port=int(port_env))
+        except Exception as e:
+            logger.warning("Web dashboard start error: %s", e)
 
 async def post_shutdown(application):
     task = application.bot_data.get("reminder_task")
