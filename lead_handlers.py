@@ -34,7 +34,7 @@ async def is_user_subscribed(bot, user_id: int) -> bool:
 def get_subscription_prompt_markup():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("👥 Rasmiy guruhimizga a’zo bo‘lish ➔", url=GROUP_INVITE_URL)],
-        [InlineKeyboardButton("✅ A’zo bo‘ldim / Tekshirish", callback_data="check_sub")]
+        [InlineKeyboardButton("✅ A’zo bo‘ldim / Tekshirish", callback_data="lead_check_sub")]
     ])
 
 def get_parent_menu_markup():
@@ -85,7 +85,7 @@ async def lead_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
 
     # --- 0. OBUNA TEKSHIRISH ---
-    if data == "check_sub":
+    if data in ("check_sub", "lead_check_sub"):
         subscribed = await is_user_subscribed(context.bot, user.id)
         if subscribed:
             await query.answer("🎉 Rahmat! A’zoligingiz muvaffaqiyatli tasdiqlandi.", show_alert=False)

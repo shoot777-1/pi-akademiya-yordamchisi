@@ -3145,7 +3145,7 @@ def main():
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact_or_phone))
 
     # Sinov darsi va IT Moyillik testi tugmalari
-    app.add_handler(CallbackQueryHandler(lead_callback_handler, pattern=r"^(lead_|quiz_p_|qp_ans_)"))
+    app.add_handler(CallbackQueryHandler(lead_callback_handler, pattern=r"^(lead_|quiz_p_|qp_ans_|check_sub)"))
 
     # Test boshqaruvi tugmalari
     app.add_handler(CallbackQueryHandler(quiz_callback_handler, pattern=r"^quiz_"))
