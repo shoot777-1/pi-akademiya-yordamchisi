@@ -39,7 +39,11 @@ O‘quvchilarimizning amaliy ishlari va erishgan natijalarini Instagramda ko‘r
 🎁 <b>BEPUL SINOV DARSIGA YOZILING!</b>
 <i>Farzandingizga qaysi IT yo‘nalishi eng mos kelishini birgalikda aniqlaymiz.</i>
 
-📞 <b>Bog‘lanish uchun:</b> +998 93 310 07 64
+━━━━━━━━━━━━━━━━━━━━
+📞 <b>BOG‘LANISH VA RO‘YXATDAN O‘TISH:</b>
+☎️ <b>+998 93 310 07 64</b>
+📍 <b>Cyber Tech Academy</b>
+━━━━━━━━━━━━━━━━━━━━
 
 👇 <b>Quyidagi tugmalar orqali qulay bog‘laning:</b>"""
 
@@ -50,22 +54,24 @@ def send_ad_to(chat_id):
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
-    # Ixcham va chetdan chiqmaydigan tugmalar
+    # Har bir tugma alohida bitta qatorda — hech qachon harflar kesilmaydi va chetdan chiqmaydi!
     reply_markup = {
         "inline_keyboard": [
             [
                 {
-                    "text": "🎁 Bepul sinov darsi",
+                    "text": "🎁 Bepul sinov darsiga yozilish",
                     "url": BOT_START_URL
-                },
+                }
+            ],
+            [
                 {
-                    "text": "🧠 IT test",
+                    "text": "🧠 Qaysi IT kasbi mos? (Test)",
                     "url": "https://t.me/pi_yordamchi_bot?start=it_test"
                 }
             ],
             [
                 {
-                    "text": "📸 Natijalar (Instagram) →",
+                    "text": "📸 O‘quvchilar natijalari (Instagram) →",
                     "url": INSTAGRAM_URL
                 }
             ]

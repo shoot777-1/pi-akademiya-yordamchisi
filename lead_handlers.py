@@ -286,23 +286,31 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
         )
         await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
 
-        # 2. Adminga xabarnoma jo'natish
-        admin_notify = (
-            f"🔔 <b>YANGI SINOV DARSI ARIZASI! (№{lead_id})</b>\n\n"
-            f"👤 <b>Murojaatchi:</b> {safe_full_name} ({user_tag})\n"
-            f"🆔 <b>Telegram ID:</b> <code>{user.id}</code>\n"
-            f"📞 <b>Telefon:</b> <code>{phone}</code>\n"
-            f"👶 <b>Farzand yoshi:</b> {age}\n"
-            f"🚀 <b>Yo‘nalish:</b> {course}\n"
+        # 2. Adminga va Guruhga xabarnoma jo'natish (Kafolatlangan yetkazish)
+        notify_msg = (
+            f"🔔 YANGI SINOV DARSI ARIZASI! (№{lead_id})\n\n"
+            f"👤 Murojaatchi: {user.full_name} ({user_tag})\n"
+            f"🆔 Telegram ID: {user.id}\n"
+            f"📞 Telefon: {phone}\n"
+            f"👶 Farzand yoshi: {age}\n"
+            f"🚀 Yo‘nalish: {course}\n"
         )
         if q_res:
-            admin_notify += f"🧠 <b>Test natijasi:</b> {q_res}\n"
-        admin_notify += f"⏰ <b>Vaqti:</b> {tashkent_now().strftime('%Y-%m-%d %H:%M')}"
+            notify_msg += f"🧠 Test natijasi: {q_res}\n"
+        notify_msg += f"⏰ Vaqti: {tashkent_now().strftime('%Y-%m-%d %H:%M')}\n\n"
+        notify_msg += f"👉 Darhol bog‘lanish: {phone}"
 
+        # 1) Admin shaxsiy chatiga (658069248)
         try:
-            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_notify, parse_mode="HTML")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=notify_msg)
         except Exception as e:
-            logger.error("Admin xabarnomasi yuborishda xato: %s", e)
+            logger.error("Admin chatiga yuborishda xato: %s", e)
+
+        # 2) CYBER TECH ACADEMY guruhiga ham yuboramiz (barcha adminlar ko'rishi uchun)
+        try:
+            await context.bot.send_message(chat_id=-1003865779918, text=notify_msg)
+        except Exception as e:
+            logger.error("Guruhga ariza yuborishda xato: %s", e)
 
         return True
     except Exception as e:
