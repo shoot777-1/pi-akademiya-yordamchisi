@@ -24,14 +24,12 @@ GROUP_INVITE_URL = "https://t.me/cyber_tech_academy_gruppamiz"
 
 async def is_user_subscribed(bot, user_id: int) -> bool:
     """Foydalanuvchi CYBER TECH ACADEMY guruhiga a'zoligini tekshirish"""
-    if user_id == ADMIN_ID:
-        return True
     try:
         member = await bot.get_chat_member(chat_id=GROUP_ID, user_id=user_id)
         return member.status in ["creator", "administrator", "member", "restricted"]
     except Exception as e:
         logger.warning("Obunani tekshirishda ogohlantirish: %s", e)
-        return True
+        return False
 
 def get_subscription_prompt_markup():
     return InlineKeyboardMarkup([
@@ -55,18 +53,21 @@ async def handle_parent_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not chat or not user:
         return
 
-    # Guruhga a'zolikni tekshirish
+    # Guruhga a'zolikni qat'iy tekshirish - a'zo bo'lmaganlarga so'rovnoma UMUMAN chiqmaydi!
     subscribed = await is_user_subscribed(context.bot, user.id)
     if not subscribed:
         sub_text = (
-            "👋 <b>Assalomu alaykum!</b>\n\n"
-            "<b>CYBER TECH ACADEMY</b> rasmiy botiga xush kelibsiz!\n\n"
-            "Botdan to‘liq foydalanish, bepul test topshirish va natijalarni kuzatib borish uchun, "
-            "iltimos, avval <b>rasmiy guruhimizga a’zo bo‘ling:</b>"
+            "🔒 <b>DIQQAT: Guruhga a’zo bo‘lish majburiy!</b>\n\n"
+            "Assalomu alaykum! <b>CYBER TECH ACADEMY</b> rasmiy botiga xush kelibsiz.\n\n"
+            "Botdan foydalanish, bepul sinov darsiga yozilish va IT testini topshirish uchun, "
+            "avval <b>rasmiy guruhimizga a’zo bo‘ling:</b>\n\n"
+            "👉 1. Pastdagi <b>«Guruhimizga a’zo bo‘lish»</b> tugmasini bosing;\n"
+            "👉 2. Guruhga qo‘shilgach, <b>«✅ A’zo bo‘ldim / Tekshirish»</b> tugmasini bosing."
         )
         await chat.send_message(sub_text, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
         return
 
+    # Faqat guruh a'zolariga so'rovnoma va asosiy menyu ochiladi:
     text = START_PARENT_TEXT
     await chat.send_message(text, parse_mode="HTML", reply_markup=get_parent_menu_markup())
 
@@ -90,7 +91,18 @@ async def lead_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             await query.answer("🎉 Rahmat! A’zoligingiz muvaffaqiyatli tasdiqlandi.", show_alert=False)
             await query.edit_message_text(START_PARENT_TEXT, parse_mode="HTML", reply_markup=get_parent_menu_markup())
         else:
-            await query.answer("⚠️ Siz hali guruhga a’zo bo‘lmadingiz. Iltimos, avval 'Guruhimizga a’zo bo‘lish' tugmasini bosing!", show_alert=True)
+            await query.answer("❌ Siz hali guruhga a’zo bo‘lmadingiz! Avval 'Guruhimizga a’zo bo‘lish' tugmasini bosing.", show_alert=True)
+        return True
+
+    # Guruhga a'zo bo'lmagan foydalanuvchi biror so'rovnoma tugmasini bossa, uni ham to'xtatamiz!
+    subscribed = await is_user_subscribed(context.bot, user.id)
+    if not subscribed:
+        await query.answer("🔒 Avval guruhimizga a’zo bo‘ling!", show_alert=True)
+        sub_text = (
+            "🔒 <b>Diqqat! So‘rovnomadan o‘tish uchun guruhga a’zo bo‘lish majburiy!</b>\n\n"
+            "Iltimos, avval quyidagi tugma orqali guruhimizga qo‘shiling va 'A’zo bo‘ldim' tugmasini bosing:"
+        )
+        await query.edit_message_text(sub_text, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
         return True
 
     # --- 1. SINOV DARSIGA YOZILISH OQIMI ---
