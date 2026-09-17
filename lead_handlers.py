@@ -319,7 +319,7 @@ async def send_lead_notifications(bot, lead_id, user_id, full_name, username, ph
     if ADMIN_ID:
         admin_targets.add(int(ADMIN_ID))
 
-    # 1. Barcha adminlarning shaxsiy chatiga yetkazish
+    # Faqat adminlarning shaxsiy chatiga yetkazish (guruhga aslo chiqmaydi!)
     for a_id in admin_targets:
         try:
             await bot.send_message(
@@ -331,17 +331,6 @@ async def send_lead_notifications(bot, lead_id, user_id, full_name, username, ph
             logger.info("Admin %s ga ariza bildirishnomasi yetkazildi", a_id)
         except Exception as e:
             logger.error("Admin %s ga xabarnoma yuborishda xato: %s", a_id, e)
-
-    # 2. Rasmiy guruhga yetkazish (-1003865779918)
-    try:
-        await bot.send_message(
-            chat_id=GROUP_ID,
-            text=notify_msg,
-            parse_mode="HTML"
-        )
-        logger.info("Guruh %s ga ariza bildirishnomasi yetkazildi", GROUP_ID)
-    except Exception as e:
-        logger.error("Guruh %s ga xabarnoma yuborishda xato: %s", GROUP_ID, e)
 
 async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Telefon raqam yoki kontakt yuborilganda arizani qabul qilish"""
