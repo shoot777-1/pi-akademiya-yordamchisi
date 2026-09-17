@@ -730,8 +730,11 @@ async def create_web_app():
     return app
 
 
-async def start_web_dashboard(host="0.0.0.0", port=8088):
+async def start_web_dashboard(host="0.0.0.0", port=None):
     """aiohttp serverini bot bilan birga ishga tushirish"""
+    import os
+    if port is None:
+        port = int(os.getenv("PORT", "8088"))
     try:
         app = await create_web_app()
         runner = web.AppRunner(app)

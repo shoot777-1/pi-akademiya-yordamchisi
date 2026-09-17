@@ -206,6 +206,20 @@ async def show_quiz_result(query, context, user_id, scores):
 
     await query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
 
+def parse_clean_phone(text_or_contact) -> str:
+    """Har qanday formatdagi O'zbekiston raqamini toza +998XXXXXXXXX formatga o'tkazish"""
+    import re
+    if not text_or_contact:
+        return ""
+    digits = "".join(re.findall(r"\d", str(text_or_contact)))
+    if len(digits) == 9:  # Masalan: 933100764 -> +998933100764
+        return f"+998{digits}"
+    elif len(digits) == 12 and digits.startswith("998"):
+        return f"+{digits}"
+    elif len(digits) >= 7:
+        return f"+{digits}" if not str(text_or_contact).startswith("+") else str(text_or_contact)
+    return ""
+
 async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Telefon raqam yoki kontakt yuborilganda arizani qabul qilish"""
     message = update.message
@@ -214,25 +228,28 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
     if not message or not user:
         return False
 
-    phone = None
+    phone = ""
     if message.contact:
-        phone = message.contact.phone_number
+        phone = parse_clean_phone(message.contact.phone_number)
     elif message.text:
         text = message.text.strip()
-        # Agar telefon raqam ko'rinishida bo'lsa yoki user waiting_phone holatida bo'lsa
-        is_waiting = USER_LEAD_DATA.get(user.id, {}).get("waiting_phone", False)
         import re
-        has_digits = len(re.findall(r"\d", text)) >= 7
-        if is_waiting or (has_digits and ("998" in text or text.startswith("+"))):
-            phone = text
+        digits = re.findall(r"\d", text)
+        is_waiting = USER_LEAD_DATA.get(user.id, {}).get("waiting_phone", False)
+        
+        # 7 tadan ortiq raqam bo'lsa yoki kutayotgan holatda raqam kiritilsa
+        if len(digits) >= 7 or is_waiting:
+            clean = parse_clean_phone(text)
+            if clean:
+                phone = clean
 
     if not phone:
         return False
 
-    # Lead ma'lumotlarini yig'amiz
+    # Lead ma'lumotlarini olamiz
     lead_info = USER_LEAD_DATA.get(user.id, {})
-    age = lead_info.get("age", "Ko‘rsatilmadi")
-    course = lead_info.get("course", "Umumiy konsultatsiya")
+    age = lead_info.get("age", "Belgilanmagan")
+    course = lead_info.get("course", "Umumiy sinov darsi / Konsultatsiya")
     q_res = lead_info.get("quiz_result", "")
 
     # Bazaga saqlaymiz
@@ -246,7 +263,8 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
         quiz_result=q_res
     )
 
-    USER_LEAD_DATA[user.id]["waiting_phone"] = False
+    if user.id in USER_LEAD_DATA:
+        USER_LEAD_DATA[user.id]["waiting_phone"] = False
 
     # 1. Foydalanuvchiga tasdiqlash
     thanks_text = (
@@ -255,8 +273,8 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
         f"va sinov darsi vaqtini qulay qilib belgilaydi.\n\n"
         f"📌 <b>Tanlangan yo‘nalish:</b> {course}\n"
         f"👶 <b>Farzand yoshi:</b> {age}\n\n"
-        f"📸 Ungacha o‘quvchilarimizning amaliy ishlari va erishgan natijalarini "
-        f"Instagram sahifamizda kuzatishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
+        f"📸 Ungacha o‘quvchilarimizning amaliy ishlari va dars jarayonlarini "
+        f"Instagram sahifamizda ko‘rishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
     )
 
     await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
