@@ -46,6 +46,13 @@ def get_parent_menu_markup():
         [InlineKeyboardButton("📞 Administrator bilan bog‘lanish", url="https://t.me/salomov_2502")]
     ])
 
+NOT_SUBSCRIBED_TEXT = (
+    "❌ <b>Siz hali guruhimizga a’zo bo‘lmadingiz!</b>\n\n"
+    "Botdan foydalanish, bepul sinov darsiga yozilish yoki IT testini topshirish uchun avval <b>rasmiy guruhimizga a’zo bo‘ling:</b>\n\n"
+    "👉 1. Pastdagi <b>«👥 Rasmiy guruhimizga a’zo bo‘lish ➔»</b> tugmasini bosing;\n"
+    "👉 2. Guruhga qo‘shilgach, <b>«✅ A’zo bo‘ldim / Tekshirish»</b> tugmasini bosing."
+)
+
 async def handle_parent_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ota-onalar va yangi foydalanuvchilar uchun /start oynasi"""
     chat = update.effective_chat
@@ -56,15 +63,7 @@ async def handle_parent_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     # Guruhga a'zolikni qat'iy tekshirish - a'zo bo'lmaganlarga so'rovnoma UMUMAN chiqmaydi!
     subscribed = await is_user_subscribed(context.bot, user.id)
     if not subscribed:
-        sub_text = (
-            "🔒 <b>DIQQAT: Guruhga a’zo bo‘lish majburiy!</b>\n\n"
-            "Assalomu alaykum! <b>CYBER TECH ACADEMY</b> rasmiy botiga xush kelibsiz.\n\n"
-            "Botdan foydalanish, bepul sinov darsiga yozilish va IT testini topshirish uchun, "
-            "avval <b>rasmiy guruhimizga a’zo bo‘ling:</b>\n\n"
-            "👉 1. Pastdagi <b>«Guruhimizga a’zo bo‘lish»</b> tugmasini bosing;\n"
-            "👉 2. Guruhga qo‘shilgach, <b>«✅ A’zo bo‘ldim / Tekshirish»</b> tugmasini bosing."
-        )
-        await chat.send_message(sub_text, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
+        await chat.send_message(NOT_SUBSCRIBED_TEXT, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
         return
 
     # Faqat guruh a'zolariga so'rovnoma va asosiy menyu ochiladi:
@@ -82,27 +81,31 @@ async def lead_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if not user:
         return False
 
-    await query.answer()
-
     # --- 0. OBUNA TEKSHIRISH ---
     if data in ("check_sub", "lead_check_sub"):
         subscribed = await is_user_subscribed(context.bot, user.id)
         if subscribed:
             await query.answer("🎉 Rahmat! A’zoligingiz muvaffaqiyatli tasdiqlandi.", show_alert=False)
-            await query.edit_message_text(START_PARENT_TEXT, parse_mode="HTML", reply_markup=get_parent_menu_markup())
+            try:
+                await query.edit_message_text(START_PARENT_TEXT, parse_mode="HTML", reply_markup=get_parent_menu_markup())
+            except Exception:
+                pass
         else:
-            await query.answer("❌ Siz hali guruhga a’zo bo‘lmadingiz! Avval 'Guruhimizga a’zo bo‘lish' tugmasini bosing.", show_alert=True)
+            await query.answer("❌ Siz hali guruhimizga a’zo bo‘lmadingiz! Avval guruhga a’zo bo‘ling.", show_alert=True)
+            try:
+                await query.edit_message_text(NOT_SUBSCRIBED_TEXT, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
+            except Exception:
+                pass
         return True
 
     # Guruhga a'zo bo'lmagan foydalanuvchi biror so'rovnoma tugmasini bossa, uni ham to'xtatamiz!
     subscribed = await is_user_subscribed(context.bot, user.id)
     if not subscribed:
-        await query.answer("🔒 Avval guruhimizga a’zo bo‘ling!", show_alert=True)
-        sub_text = (
-            "🔒 <b>Diqqat! So‘rovnomadan o‘tish uchun guruhga a’zo bo‘lish majburiy!</b>\n\n"
-            "Iltimos, avval quyidagi tugma orqali guruhimizga qo‘shiling va 'A’zo bo‘ldim' tugmasini bosing:"
-        )
-        await query.edit_message_text(sub_text, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
+        await query.answer("❌ Siz hali guruhimizga a’zo bo‘lmadingiz! Avval a’zo bo‘ling.", show_alert=True)
+        try:
+            await query.edit_message_text(NOT_SUBSCRIBED_TEXT, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
+        except Exception:
+            pass
         return True
 
     # --- 1. SINOV DARSIGA YOZILISH OQIMI ---
@@ -281,6 +284,65 @@ def parse_clean_phone(text_or_contact) -> str:
         return f"+{digits}" if not str(text_or_contact).startswith("+") else str(text_or_contact)
     return ""
 
+async def send_lead_notifications(bot, lead_id, user_id, full_name, username, phone, age, course, quiz_result=""):
+    """Adminga va Guruhga yangi ariza kelgani haqida kafolatlangan xabarnoma yuborish"""
+    user_tag = f"@{username}" if username else "mavjud emas"
+    safe_name = html.escape(str(full_name or "Mijoz"))
+    now_str = tashkent_now().strftime('%Y-%m-%d %H:%M')
+    
+    notify_msg = (
+        f"🚨 <b>YANGI SINOV DARSI ARIZASI! (№{lead_id})</b>\n\n"
+        f"👤 <b>Murojaatchi:</b> {safe_name} ({user_tag})\n"
+        f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
+        f"📞 <b>Telefon raqam:</b> <code>{phone}</code>\n"
+        f"👶 <b>Farzand yoshi:</b> {html.escape(str(age))}\n"
+        f"🚀 <b>Tanlangan yo‘nalish:</b> {html.escape(str(course))}\n"
+    )
+    if quiz_result:
+        notify_msg += f"🧠 <b>Test natijasi:</b> {html.escape(str(quiz_result))}\n"
+    notify_msg += (
+        f"⏰ <b>Vaqti:</b> {now_str}\n\n"
+        f"👉 <b>Darhol bog‘lanish:</b> <code>{phone}</code>"
+    )
+
+    # Adminga murojaatchi bilan darhol bog'lanish tugmasi
+    admin_buttons = []
+    if username:
+        admin_buttons.append([InlineKeyboardButton("💬 Telegramdan yozish", url=f"https://t.me/{username}")])
+    elif user_id:
+        admin_buttons.append([InlineKeyboardButton("💬 Profilni ochish", url=f"tg://user?id={user_id}")])
+
+    admin_markup = InlineKeyboardMarkup(admin_buttons) if admin_buttons else None
+
+    # Yuboriladigan admin chatlari (har doim 658069248 va agar boshqa bo'lsa ADMIN_ID)
+    admin_targets = {658069248}
+    if ADMIN_ID:
+        admin_targets.add(int(ADMIN_ID))
+
+    # 1. Barcha adminlarning shaxsiy chatiga yetkazish
+    for a_id in admin_targets:
+        try:
+            await bot.send_message(
+                chat_id=a_id,
+                text=notify_msg,
+                parse_mode="HTML",
+                reply_markup=admin_markup
+            )
+            logger.info("Admin %s ga ariza bildirishnomasi yetkazildi", a_id)
+        except Exception as e:
+            logger.error("Admin %s ga xabarnoma yuborishda xato: %s", a_id, e)
+
+    # 2. Rasmiy guruhga yetkazish (-1003865779918)
+    try:
+        await bot.send_message(
+            chat_id=GROUP_ID,
+            text=notify_msg,
+            parse_mode="HTML"
+        )
+        logger.info("Guruh %s ga ariza bildirishnomasi yetkazildi", GROUP_ID)
+    except Exception as e:
+        logger.error("Guruh %s ga xabarnoma yuborishda xato: %s", GROUP_ID, e)
+
 async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Telefon raqam yoki kontakt yuborilganda arizani qabul qilish"""
     message = update.message
@@ -307,12 +369,13 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
     if not phone:
         return False
 
-    try:
-        lead_info = USER_LEAD_DATA.get(user.id, {})
-        age = lead_info.get("age", "Belgilanmagan")
-        course = lead_info.get("course", "Sinov darsi / Konsultatsiya")
-        q_res = lead_info.get("quiz_result", "")
+    lead_info = USER_LEAD_DATA.get(user.id, {})
+    age = lead_info.get("age", "Belgilanmagan")
+    course = lead_info.get("course", "Sinov darsi / Konsultatsiya")
+    q_res = lead_info.get("quiz_result", "")
 
+    lead_id = 1
+    try:
         lead_id = save_lead(
             telegram_id=user.id,
             full_name=user.full_name or "Foydalanuvchi",
@@ -322,61 +385,42 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
             phone_number=phone,
             quiz_result=q_res
         )
-
-        if user.id in USER_LEAD_DATA:
-            USER_LEAD_DATA[user.id]["waiting_phone"] = False
-
-        safe_first_name = html.escape(user.first_name or "Hurmatli mijoz")
-        safe_full_name = html.escape(user.full_name or "Mijoz")
-        user_tag = f"@{user.username}" if user.username else "mavjud emas"
-
-        # 1. Foydalanuvchiga tasdiqlash
-        thanks_text = (
-            f"🎉 <b>ARIZANGIZ QABUL QILINDI! (№{lead_id})</b>\n\n"
-            f"Rahmat, <b>{safe_first_name}</b>! Mutaxassisimiz tez orada <code>{phone}</code> raqami orqali siz bilan bog‘lanadi "
-            f"va sinov darsi vaqtini qulay qilib belgilaydi.\n\n"
-            f"📌 <b>Tanlangan yo‘nalish:</b> {course}\n"
-            f"👶 <b>Farzand yoshi:</b> {age}\n"
-            f"📞 <b>Aloqa uchun:</b> +998 93 310 07 64\n\n"
-            f"📸 Ungacha o‘quvchilarimizning natijalarini "
-            f"Instagramda ko‘rishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
-        )
-        await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
-
-        # 2. Adminga va Guruhga xabarnoma jo'natish (Kafolatlangan yetkazish)
-        notify_msg = (
-            f"🔔 YANGI SINOV DARSI ARIZASI! (№{lead_id})\n\n"
-            f"👤 Murojaatchi: {user.full_name} ({user_tag})\n"
-            f"🆔 Telegram ID: {user.id}\n"
-            f"📞 Telefon: {phone}\n"
-            f"👶 Farzand yoshi: {age}\n"
-            f"🚀 Yo‘nalish: {course}\n"
-        )
-        if q_res:
-            notify_msg += f"🧠 Test natijasi: {q_res}\n"
-        notify_msg += f"⏰ Vaqti: {tashkent_now().strftime('%Y-%m-%d %H:%M')}\n\n"
-        notify_msg += f"👉 Darhol bog‘lanish: {phone}"
-
-        # 1) Admin shaxsiy chatiga (658069248)
-        try:
-            await context.bot.send_message(chat_id=ADMIN_ID, text=notify_msg)
-        except Exception as e:
-            logger.error("Admin chatiga yuborishda xato: %s", e)
-
-        # 2) CYBER TECH ACADEMY guruhiga ham yuboramiz (barcha adminlar ko'rishi uchun)
-        try:
-            await context.bot.send_message(chat_id=-1003865779918, text=notify_msg)
-        except Exception as e:
-            logger.error("Guruhga ariza yuborishda xato: %s", e)
-
-        return True
     except Exception as e:
-        logger.error("Lead qabul qilishda xato: %s", e, exc_info=True)
-        await message.reply_text(
-            f"✅ Arizangiz muvaffaqiyatli qabul qilindi!\n\n"
-            f"📞 Telefoningiz: {phone}\n"
-            f"Tez orada siz bilan bog‘lanamiz.\n\n"
-            f"📞 Bog‘lanish uchun: +998 93 310 07 64",
-            reply_markup=ReplyKeyboardRemove()
-        )
-        return True
+        logger.error("Bazaga saqlashda xatolik: %s", e)
+
+    if user.id in USER_LEAD_DATA:
+        USER_LEAD_DATA[user.id]["waiting_phone"] = False
+
+    safe_first_name = html.escape(user.first_name or "Hurmatli mijoz")
+
+    # 1. Foydalanuvchiga tasdiqlash xabari
+    thanks_text = (
+        f"🎉 <b>ARIZANGIZ QABUL QILINDI! (№{lead_id})</b>\n\n"
+        f"Rahmat, <b>{safe_first_name}</b>! Mutaxassisimiz tez orada <code>{phone}</code> raqami orqali siz bilan bog‘lanadi "
+        f"va sinov darsi vaqtini qulay qilib belgilaydi.\n\n"
+        f"📌 <b>Tanlangan yo‘nalish:</b> {course}\n"
+        f"👶 <b>Farzand yoshi:</b> {age}\n"
+        f"📞 <b>Aloqa uchun:</b> +998 93 310 07 64\n\n"
+        f"📸 Ungacha o‘quvchilarimizning natijalarini "
+        f"Instagramda ko‘rishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
+    )
+    try:
+        await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+    except Exception as e:
+        logger.error("Foydalanuvchiga tasdiq xabar yuborishda xato: %s", e)
+        await message.reply_text(f"✅ Arizangiz qabul qilindi! Telefon: {phone}\nTez orada bog'lanamiz.", reply_markup=ReplyKeyboardRemove())
+
+    # 2. Adminga va Guruhga kafolatlangan xabarnoma jo'natish
+    await send_lead_notifications(
+        bot=context.bot,
+        lead_id=lead_id,
+        user_id=user.id,
+        full_name=user.full_name or "Mijoz",
+        username=user.username or "",
+        phone=phone,
+        age=age,
+        course=course,
+        quiz_result=q_res
+    )
+
+    return True
