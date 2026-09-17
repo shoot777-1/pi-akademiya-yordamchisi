@@ -1495,15 +1495,25 @@ async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     await update.message.reply_text(reply_msg, parse_mode="Markdown")
 
-@admin_only
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Bot boshlanganda xush kelibsiz xabari"""
     chat = update.effective_chat
     user = update.effective_user
     
+    if not chat or not user:
+        return
+
     if chat.type != "private":
         await update.message.reply_text("Buyruqlar ro'yxati botning shaxsiy chatida: /help")
         return
+
+    # Reklama havolasi orqali yoki oddiy ota-onalar kirganda
+    is_promo_arg = bool(context.args and any(a in ("sinov_darsi", "it_test", "start") for a in context.args))
+    if is_promo_arg or user.id != ADMIN_ID:
+        from lead_handlers import handle_parent_start
+        await handle_parent_start(update, context)
+        return
+
     await send_reply(update.message, ADMIN_HELP)
 
 
@@ -2593,6 +2603,10 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         
     user = update.effective_user
     text = message.text.strip()
+    if chat.type == "private":
+        from lead_handlers import handle_contact_or_phone
+        if await handle_contact_or_phone(update, context):
+            return
     if await send_requested_books(message):
         return
     if await natural_payment(update, context):
@@ -3125,6 +3139,13 @@ def main():
 
     # Matnli xabarlar (Savol-javob AI)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
+
+    # Ota-onalar kontakt / telefon raqami yuborishi
+    from lead_handlers import lead_callback_handler, handle_contact_or_phone
+    app.add_handler(MessageHandler(filters.CONTACT, handle_contact_or_phone))
+
+    # Sinov darsi va IT Moyillik testi tugmalari
+    app.add_handler(CallbackQueryHandler(lead_callback_handler, pattern=r"^(lead_|quiz_p_|qp_ans_)"))
 
     # Test boshqaruvi tugmalari
     app.add_handler(CallbackQueryHandler(quiz_callback_handler, pattern=r"^quiz_"))
