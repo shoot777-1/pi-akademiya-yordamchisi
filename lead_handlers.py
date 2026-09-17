@@ -206,6 +206,10 @@ async def show_quiz_result(query, context, user_id, scores):
 
     await query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
 
+import html
+import logging
+logger = logging.getLogger(__name__)
+
 def parse_clean_phone(text_or_contact) -> str:
     """Har qanday formatdagi O'zbekiston raqamini toza +998XXXXXXXXX formatga o'tkazish"""
     import re
@@ -234,69 +238,80 @@ async def handle_contact_or_phone(update: Update, context: ContextTypes.DEFAULT_
     elif message.text:
         text = message.text.strip()
         import re
-        digits = re.findall(r"\d", text)
+        digits = "".join(re.findall(r"\d", text))
         is_waiting = USER_LEAD_DATA.get(user.id, {}).get("waiting_phone", False)
         
-        # 7 tadan ortiq raqam bo'lsa yoki kutayotgan holatda raqam kiritilsa
-        if len(digits) >= 7 or is_waiting:
-            clean = parse_clean_phone(text)
-            if clean:
-                phone = clean
+        # 7 tadan 15 tagacha raqam bo'lsa yoki kutayotgan holatda kiritilsa
+        if len(digits) >= 7:
+            phone = parse_clean_phone(digits)
+        elif is_waiting:
+            phone = parse_clean_phone(text)
 
     if not phone:
         return False
 
-    # Lead ma'lumotlarini olamiz
-    lead_info = USER_LEAD_DATA.get(user.id, {})
-    age = lead_info.get("age", "Belgilanmagan")
-    course = lead_info.get("course", "Umumiy sinov darsi / Konsultatsiya")
-    q_res = lead_info.get("quiz_result", "")
-
-    # Bazaga saqlaymiz
-    lead_id = save_lead(
-        telegram_id=user.id,
-        full_name=user.full_name,
-        username=user.username or "",
-        child_age=age,
-        chosen_course=course,
-        phone_number=phone,
-        quiz_result=q_res
-    )
-
-    if user.id in USER_LEAD_DATA:
-        USER_LEAD_DATA[user.id]["waiting_phone"] = False
-
-    # 1. Foydalanuvchiga tasdiqlash
-    thanks_text = (
-        f"🎉 <b>ARIZANGIZ QABUL QILINDI! (№{lead_id})</b>\n\n"
-        f"Rahmat, <b>{user.first_name}</b>! Mutaxassisimiz tez orada <code>{phone}</code> raqami orqali siz bilan bog‘lanadi "
-        f"va sinov darsi vaqtini qulay qilib belgilaydi.\n\n"
-        f"📌 <b>Tanlangan yo‘nalish:</b> {course}\n"
-        f"👶 <b>Farzand yoshi:</b> {age}\n\n"
-        f"📸 Ungacha o‘quvchilarimizning amaliy ishlari va dars jarayonlarini "
-        f"Instagram sahifamizda ko‘rishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
-    )
-
-    await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
-
-    # 2. Adminga xabarnoma jo'natish
-    now_str = tashkent_now().strftime("%Y-%m-%d %H:%M")
-    user_tag = f"@{user.username}" if user.username else "mavjud emas"
-    admin_notify = (
-        f"🔔 <b>YANGI SINOV DARSI ARIZASI! (№{lead_id})</b>\n\n"
-        f"👤 <b>Murojaatchi:</b> {user.full_name} ({user_tag})\n"
-        f"🆔 <b>Telegram ID:</b> <code>{user.id}</code>\n"
-        f"📞 <b>Telefon:</b> <code>{phone}</code>\n"
-        f"👶 <b>Farzand yoshi:</b> {age}\n"
-        f"🚀 <b>Yo‘nalish:</b> {course}\n"
-    )
-    if q_res:
-        admin_notify += f"🧠 <b>Test natijasi:</b> {q_res}\n"
-    admin_notify += f"⏰ <b>Vaqti:</b> {now_str}"
-
     try:
-        await context.bot.send_message(chat_id=ADMIN_ID, text=admin_notify, parse_mode="HTML")
-    except Exception as e:
-        print("Adminga xabarnoma yuborishda xato:", e)
+        lead_info = USER_LEAD_DATA.get(user.id, {})
+        age = lead_info.get("age", "Belgilanmagan")
+        course = lead_info.get("course", "Sinov darsi / Konsultatsiya")
+        q_res = lead_info.get("quiz_result", "")
 
-    return True
+        lead_id = save_lead(
+            telegram_id=user.id,
+            full_name=user.full_name or "Foydalanuvchi",
+            username=user.username or "",
+            child_age=age,
+            chosen_course=course,
+            phone_number=phone,
+            quiz_result=q_res
+        )
+
+        if user.id in USER_LEAD_DATA:
+            USER_LEAD_DATA[user.id]["waiting_phone"] = False
+
+        safe_first_name = html.escape(user.first_name or "Hurmatli mijoz")
+        safe_full_name = html.escape(user.full_name or "Mijoz")
+        user_tag = f"@{user.username}" if user.username else "mavjud emas"
+
+        # 1. Foydalanuvchiga tasdiqlash
+        thanks_text = (
+            f"🎉 <b>ARIZANGIZ QABUL QILINDI! (№{lead_id})</b>\n\n"
+            f"Rahmat, <b>{safe_first_name}</b>! Mutaxassisimiz tez orada <code>{phone}</code> raqami orqali siz bilan bog‘lanadi "
+            f"va sinov darsi vaqtini qulay qilib belgilaydi.\n\n"
+            f"📌 <b>Tanlangan yo‘nalish:</b> {course}\n"
+            f"👶 <b>Farzand yoshi:</b> {age}\n"
+            f"📞 <b>Aloqa uchun:</b> +998 93 310 07 64\n\n"
+            f"📸 Ungacha o‘quvchilarimizning natijalarini "
+            f"Instagramda ko‘rishingiz mumkin: <a href='https://www.instagram.com/salomov_2502/'>@salomov_2502</a>"
+        )
+        await message.reply_text(thanks_text, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+
+        # 2. Adminga xabarnoma jo'natish
+        admin_notify = (
+            f"🔔 <b>YANGI SINOV DARSI ARIZASI! (№{lead_id})</b>\n\n"
+            f"👤 <b>Murojaatchi:</b> {safe_full_name} ({user_tag})\n"
+            f"🆔 <b>Telegram ID:</b> <code>{user.id}</code>\n"
+            f"📞 <b>Telefon:</b> <code>{phone}</code>\n"
+            f"👶 <b>Farzand yoshi:</b> {age}\n"
+            f"🚀 <b>Yo‘nalish:</b> {course}\n"
+        )
+        if q_res:
+            admin_notify += f"🧠 <b>Test natijasi:</b> {q_res}\n"
+        admin_notify += f"⏰ <b>Vaqti:</b> {tashkent_now().strftime('%Y-%m-%d %H:%M')}"
+
+        try:
+            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_notify, parse_mode="HTML")
+        except Exception as e:
+            logger.error("Admin xabarnomasi yuborishda xato: %s", e)
+
+        return True
+    except Exception as e:
+        logger.error("Lead qabul qilishda xato: %s", e, exc_info=True)
+        await message.reply_text(
+            f"✅ Arizangiz muvaffaqiyatli qabul qilindi!\n\n"
+            f"📞 Telefoningiz: {phone}\n"
+            f"Tez orada siz bilan bog‘lanamiz.\n\n"
+            f"📞 Bog‘lanish uchun: +998 93 310 07 64",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return True

@@ -25,25 +25,23 @@ Uni texnologiyadan uzoqlashtirish yechim emas — eng to‘g‘ri yo‘l undan u
 <b>CYBER TECH ACADEMY</b>’da o‘quvchilar nazariya bilan cheklanmay, dasturlash va texnologiyalarni amalda o‘rganib, mustaqil loyihalar yaratadilar.
 
 🚀 <b>O‘QUV MARKAZIMIZ YO‘NALISHLARI:</b>
-🔹 🐍 Python dasturlash
-🔹 🤖 Sun’iy intellekt (AI)
-🔹 🌐 Web dasturlash
-🔹 📱 Android mobil dasturlash
+🔹 🐍 Python dasturlash & AI
+🔹 🌐 Web & Mobil dasturlash
 🔹 🔐 Kiberxavfsizlik
 🔹 🤖 Robototexnika / Arduino
-🔹 🎨 Grafik dizayn / Photoshop
-🔹 🎬 Video montaj / Premiere Pro
-🔹 📊 Microsoft Office
-🔹 💻 Kompyuter savodxonligi
+🔹 🎨 Grafik dizayn & Video montaj
+🔹 💻 Kompyuter savodxonligi & Office
 
 🏆 <b>Bizda o‘qish emas — NATIJA gapiradi!</b>
-O‘quvchilarimizning amaliy ishlari, yaratgan loyihalari va natijalarini o‘z ko‘zingiz bilan ko‘ring:
+O‘quvchilarimizning amaliy ishlari va erishgan natijalarini Instagramda ko‘ring:
 📸 <b>Instagram:</b> <a href="https://www.instagram.com/salomov_2502/">@salomov_2502</a>
 
 🎁 <b>BEPUL SINOV DARSIGA YOZILING!</b>
 <i>Farzandingizga qaysi IT yo‘nalishi eng mos kelishini birgalikda aniqlaymiz.</i>
 
-👇 Quyidagi tugmalar orqali qulay tarzda bog‘laning:"""
+📞 <b>Bog‘lanish uchun:</b> +998 93 310 07 64
+
+👇 <b>Quyidagi tugmalar orqali qulay bog‘laning:</b>"""
 
 def send_ad_to(chat_id):
     if not BOT_TOKEN:
@@ -52,23 +50,22 @@ def send_ad_to(chat_id):
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
+    # Ixcham va chetdan chiqmaydigan tugmalar
     reply_markup = {
         "inline_keyboard": [
             [
                 {
-                    "text": "🎯 BEPUL SINOV DARSIGA YOZILISH 🚀",
+                    "text": "🎁 Bepul sinov darsi",
                     "url": BOT_START_URL
-                }
-            ],
-            [
+                },
                 {
-                    "text": "🧠 FARZANDINGIZGA QAYSI IT KASBI MOS? (TEST) 💡",
+                    "text": "🧠 IT test",
                     "url": "https://t.me/pi_yordamchi_bot?start=it_test"
                 }
             ],
             [
                 {
-                    "text": "📸 NATIJALARNI KO‘RISH (INSTAGRAM) 🔥",
+                    "text": "📸 Natijalar (Instagram) →",
                     "url": INSTAGRAM_URL
                 }
             ]
