@@ -1,4 +1,5 @@
-import sqlite3
+
+import sqlite3
 import json
 from typing import List, Dict, Optional, Any
 from datetime import datetime, date, timedelta
@@ -49,6 +50,22 @@ def init_db():
     CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+    );
+    """)
+
+    # Sinov darsi arizalari (Leads)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_id INTEGER,
+        user_full_name TEXT,
+        username TEXT,
+        child_age TEXT,
+        chosen_course TEXT,
+        phone_number TEXT,
+        quiz_result TEXT,
+        status TEXT DEFAULT 'yangi',
+        created_at TEXT
     );
     """)
     

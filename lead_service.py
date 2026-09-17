@@ -72,6 +72,20 @@ IT_QUIZ_QUESTIONS = [
 def save_lead(telegram_id, full_name, username, child_age, chosen_course, phone, quiz_result=""):
     now = tashkent_now().isoformat()
     with closing(get_connection()) as conn, conn:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER,
+            user_full_name TEXT,
+            username TEXT,
+            child_age TEXT,
+            chosen_course TEXT,
+            phone_number TEXT,
+            quiz_result TEXT,
+            status TEXT DEFAULT 'yangi',
+            created_at TEXT
+        );
+        """)
         cursor = conn.execute("""
             INSERT INTO leads (telegram_id, user_full_name, username, child_age, chosen_course, phone_number, quiz_result, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
