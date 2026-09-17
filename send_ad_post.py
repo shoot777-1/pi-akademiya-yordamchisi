@@ -19,29 +19,27 @@ INSTAGRAM_URL = "https://www.instagram.com/salomov_2502/"
 
 CAPTION_TEXT = """💻 <b>FARZANDINGIZ TELEFONDA FAQAT O‘YNAMASIN — UNI YARATISHNI O‘RGANSIN.</b>
 
-Farzandingiz telefon yoki kompyuter qarshisida ko‘p vaqt o‘tkazadimi?
-Uni texnologiyadan uzoqlashtirish yechim emas — eng to‘g‘ri yo‘l undan unumli foydalanishni o‘rgatishdir!
+Farzandingiz telefon qarshisida ko‘p vaqt o‘tkazadimi? Uni cheklash emas, to‘g‘ri yo‘naltirish kerak!
 
-<b>CYBER TECH ACADEMY</b>’da o‘quvchilar nazariya bilan cheklanmay, dasturlash va texnologiyalarni amalda o‘rganib, mustaqil loyihalar yaratadilar.
+<b>CYBER TECH ACADEMY</b>’da o‘quvchilar nazariya bilan cheklanmay, dasturlash va texnologiyalarni amalda o‘rganadilar.
 
-🚀 <b>O‘QUV MARKAZIMIZ YO‘NALISHLARI:</b>
-🔹 🐍 Python dasturlash & AI
-🔹 🌐 Web & Mobil dasturlash
-🔹 🔐 Kiberxavfsizlik
-🔹 🤖 Robototexnika / Arduino
+🚀 <b>ASOSIY YO‘NALISHLAR (7–17 yosh):</b>
+🔹 🐍 Python & Sun’iy intellekt (AI)
+🔹 🌐 Web & Android dasturlash
+🔹 🤖 Robototexnika & Arduino
 🔹 🎨 Grafik dizayn & Video montaj
 🔹 💻 Kompyuter savodxonligi & Office
 
 🏆 <b>Bizda o‘qish emas — NATIJA gapiradi!</b>
-O‘quvchilarimizning amaliy ishlari va erishgan natijalarini Instagramda ko‘ring:
-📸 <b>Instagram:</b> <a href="https://www.instagram.com/salomov_2502/">@salomov_2502</a>
+O‘quvchilar natijalari: <a href="https://www.instagram.com/salomov_2502/">@salomov_2502</a>
 
 🎁 <b>BEPUL SINOV DARSIGA YOZILING!</b>
-<i>Farzandingizga qaysi IT yo‘nalishi eng mos kelishini birgalikda aniqlaymiz.</i>
+<i>Qaysi IT yo‘nalishi mosligini birgalikda aniqlaymiz.</i>
 
 ━━━━━━━━━━━━━━━━━━━━
 📞 <b>BOG‘LANISH VA RO‘YXATDAN O‘TISH:</b>
 ☎️ <b>+998 93 310 07 64</b>
+👥 <b>Guruhimiz:</b> @cyber_tech_academy_gruppamiz
 📍 <b>Cyber Tech Academy</b>
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -67,6 +65,12 @@ def send_ad_to(chat_id):
                 {
                     "text": "🧠 Qaysi IT kasbi mos? (Test)",
                     "url": "https://t.me/pi_yordamchi_bot?start=it_test"
+                }
+            ],
+            [
+                {
+                    "text": "👥 Rasmiy guruhimizga qo‘shilish ➔",
+                    "url": "https://t.me/cyber_tech_academy_gruppamiz"
                 }
             ],
             [

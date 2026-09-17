@@ -19,10 +19,31 @@ Biz uchun eng muhim ko‘rsatkich — nechta dars o‘tilgani emas, balki <b>o�
 
 👇 <b>Quyidagi kerakli bo‘limni tanlang:</b>"""
 
+GROUP_ID = -1003865779918
+GROUP_INVITE_URL = "https://t.me/cyber_tech_academy_gruppamiz"
+
+async def is_user_subscribed(bot, user_id: int) -> bool:
+    """Foydalanuvchi CYBER TECH ACADEMY guruhiga a'zoligini tekshirish"""
+    if user_id == ADMIN_ID:
+        return True
+    try:
+        member = await bot.get_chat_member(chat_id=GROUP_ID, user_id=user_id)
+        return member.status in ["creator", "administrator", "member", "restricted"]
+    except Exception as e:
+        logger.warning("Obunani tekshirishda ogohlantirish: %s", e)
+        return True
+
+def get_subscription_prompt_markup():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("👥 Rasmiy guruhimizga a’zo bo‘lish ➔", url=GROUP_INVITE_URL)],
+        [InlineKeyboardButton("✅ A’zo bo‘ldim / Tekshirish", callback_data="check_sub")]
+    ])
+
 def get_parent_menu_markup():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎁 Bepul sinov darsiga yozilish", callback_data="lead_step_age")],
         [InlineKeyboardButton("🧠 Farzandingiz qaysi IT kasbiga moyil? (Test)", callback_data="quiz_p_start")],
+        [InlineKeyboardButton("👥 Rasmiy guruhimiz", url=GROUP_INVITE_URL)],
         [InlineKeyboardButton("📸 O‘quvchilar natijalari (Instagram)", url="https://www.instagram.com/salomov_2502/")],
         [InlineKeyboardButton("📞 Administrator bilan bog‘lanish", url="https://t.me/salomov_2502")]
     ])
@@ -30,8 +51,22 @@ def get_parent_menu_markup():
 async def handle_parent_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ota-onalar va yangi foydalanuvchilar uchun /start oynasi"""
     chat = update.effective_chat
-    if not chat:
+    user = update.effective_user
+    if not chat or not user:
         return
+
+    # Guruhga a'zolikni tekshirish
+    subscribed = await is_user_subscribed(context.bot, user.id)
+    if not subscribed:
+        sub_text = (
+            "👋 <b>Assalomu alaykum!</b>\n\n"
+            "<b>CYBER TECH ACADEMY</b> rasmiy botiga xush kelibsiz!\n\n"
+            "Botdan to‘liq foydalanish, bepul test topshirish va natijalarni kuzatib borish uchun, "
+            "iltimos, avval <b>rasmiy guruhimizga a’zo bo‘ling:</b>"
+        )
+        await chat.send_message(sub_text, parse_mode="HTML", reply_markup=get_subscription_prompt_markup())
+        return
+
     text = START_PARENT_TEXT
     await chat.send_message(text, parse_mode="HTML", reply_markup=get_parent_menu_markup())
 
@@ -47,6 +82,16 @@ async def lead_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         return False
 
     await query.answer()
+
+    # --- 0. OBUNA TEKSHIRISH ---
+    if data == "check_sub":
+        subscribed = await is_user_subscribed(context.bot, user.id)
+        if subscribed:
+            await query.answer("🎉 Rahmat! A’zoligingiz muvaffaqiyatli tasdiqlandi.", show_alert=False)
+            await query.edit_message_text(START_PARENT_TEXT, parse_mode="HTML", reply_markup=get_parent_menu_markup())
+        else:
+            await query.answer("⚠️ Siz hali guruhga a’zo bo‘lmadingiz. Iltimos, avval 'Guruhimizga a’zo bo‘lish' tugmasini bosing!", show_alert=True)
+        return True
 
     # --- 1. SINOV DARSIGA YOZILISH OQIMI ---
     if data == "lead_step_age" or data == "lead_restart":
